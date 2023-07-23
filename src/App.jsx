@@ -9,15 +9,29 @@ function App() {
 
   const openai = new OpenAIApi(configuration);
 
+  const prompt = "Give me 10 inspiring quotes.";
+
   useEffect(() => {
     makeRequest();
   }, []);
 
   const makeRequest = async () => {
-    const chat_completion = await openai.createChatCompletion({
+    const options = {
       model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: "Give me 10 inspiring quotes." }],
-    });
+      frequency_penalty: 0.0,
+      presence_penalty: 0.0,
+      max_tokens: 100,
+    };
+
+    const messages = [{ role: "user", content: prompt }];
+
+    const completedOptions = {
+      ...options,
+      messages: messages,
+    };
+
+    const chat_completion = await openai.createChatCompletion(completedOptions);
+    console.log(chat_completion.data.choices[0].message);
   };
 
   return (
