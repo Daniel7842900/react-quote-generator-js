@@ -1,8 +1,12 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Configuration, OpenAIApi } from "openai";
 import "./App.css";
 
 function App() {
+  const [response, setResponse] = useState();
+  const [quoteItems, setQuoteItems] = useState([]);
+  const [currentQuote, setCurrentQuote] = useState("");
+
   const configuration = new Configuration({
     apiKey: import.meta.env.VITE_OPENAI_API_KEY,
   });
@@ -20,7 +24,7 @@ function App() {
       model: "gpt-3.5-turbo",
       frequency_penalty: 0.0,
       presence_penalty: 0.0,
-      max_tokens: 100,
+      max_tokens: 500,
     };
 
     const messages = [{ role: "user", content: prompt }];
@@ -31,7 +35,30 @@ function App() {
     };
 
     const chat_completion = await openai.createChatCompletion(completedOptions);
-    console.log(chat_completion.data.choices[0].message);
+    const responseContent = chat_completion.data.choices[0].message.content;
+    const quotes = responseContent.split("\n");
+    const quoteItems = [];
+
+    quotes.forEach((q) => {
+      // Capture the number from the string
+      const numberMatchId = q.match(/^\d+/);
+      const id = numberMatchId ? parseInt(numberMatchId[0]) : null;
+
+      // Capture the content quote from the string
+      const content = q.slice(3);
+
+      // Construct an object with captured info
+      const quote = {
+        id: id,
+        content: content,
+      };
+
+      // Add a quote object into an array
+      quoteItems.push(quote);
+    });
+
+    setResponse(responseContent);
+    setQuoteItems(quoteItems);
   };
 
   return (
@@ -40,7 +67,13 @@ function App() {
         <h1 className="text-5xl">Welcome to Quote Generator</h1>
       </div>
       <div className="flex h-3/5 justify-center items-center mx-auto">
-        <span className="text-6xl italic">main quote here</span>
+        {quoteItems.map((quote) => {
+          return (
+            <span key={quote.id} className="text-2xl italic">
+              {quote.content}
+            </span>
+          );
+        })}
       </div>
       <div className="flex h-1/5 justify-center mx-auto">
         <div>
