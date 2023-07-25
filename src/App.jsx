@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Configuration, OpenAIApi } from "openai";
 import "./App.css";
 
 function App() {
   const [response, setResponse] = useState();
   const [quoteItems, setQuoteItems] = useState([]);
-  const [currentQuote, setCurrentQuote] = useState("");
+  const [currentQuote, setCurrentQuote] = useState({});
 
   const configuration = new Configuration({
     apiKey: import.meta.env.VITE_OPENAI_API_KEY,
@@ -13,13 +13,11 @@ function App() {
 
   const openai = new OpenAIApi(configuration);
 
-  const prompt = "Give me 10 inspiring quotes.";
-
-  useEffect(() => {
-    makeRequest();
-  }, []);
-
-  const makeRequest = async () => {
+  /**
+   * Constructs an option that will be used to send a request.
+   * @returns an object
+   */
+  const constructOptions = () => {
     const options = {
       model: "gpt-3.5-turbo",
       frequency_penalty: 0.0,
@@ -27,14 +25,31 @@ function App() {
       max_tokens: 500,
     };
 
-    const messages = [{ role: "user", content: prompt }];
+    const PROMPT = "Give me 10 inspiring quotes.";
+
+    const messages = [{ role: "user", content: PROMPT }];
 
     const completedOptions = {
       ...options,
       messages: messages,
     };
 
+    return completedOptions;
+  };
+
+  /**
+   * Send a request to OpenAI API and fetch the data with the given prompt.
+   *
+   * @returns an array of objects
+   */
+  const makeRequest = async () => {
+    // Construct the option that will be used to send a request
+    const completedOptions = constructOptions();
+
+    // Make a call with given option
     const chat_completion = await openai.createChatCompletion(completedOptions);
+
+    // Store the response (only the content)
     const responseContent = chat_completion.data.choices[0].message.content;
     const quotes = responseContent.split("\n");
     const quoteItems = [];
@@ -51,6 +66,7 @@ function App() {
       const quote = {
         id: id,
         content: content,
+        displayed: false,
       };
 
       // Add a quote object into an array
@@ -59,6 +75,52 @@ function App() {
 
     setResponse(responseContent);
     setQuoteItems(quoteItems);
+    return quoteItems;
+  };
+
+  /**
+   * Handles Generate Quote button click.
+   */
+  const handleOnclick = async () => {
+    // Check if quoteItems is empty or not
+    if (quoteItems.length > 0) {
+      // Check if the last quote is already displayed.
+      // If so, fetch another quotes and display the first one.
+      if (quoteItems[quoteItems.length - 1]["displayed"] === true) {
+        setQuoteItems([]);
+
+        const fetchedData = await makeRequest();
+        await findQuoteToRender(fetchedData);
+      } else {
+        await findQuoteToRender(quoteItems);
+      }
+    } else {
+      const fetchedData = await makeRequest();
+      await findQuoteToRender(fetchedData);
+    }
+  };
+
+  /**
+   * Find the next quote to render
+   * Find the quote that has displayed property false.
+   * If the quote is found, update the states accordingly.
+   *
+   * @param {*} quoteItems
+   */
+  const findQuoteToRender = async (quoteItems) => {
+    // Find the quote hasn't displayed yet
+    const itemToDisplay = quoteItems.find((item) => item.displayed === false);
+
+    // If found, set the states accordingly
+    if (itemToDisplay !== undefined) {
+      const updatedItem = { ...itemToDisplay, displayed: true };
+      const updatedQuoteItems = quoteItems.map((item) =>
+        item.id === itemToDisplay.id ? updatedItem : item
+      );
+
+      setCurrentQuote(updatedItem);
+      setQuoteItems(updatedQuoteItems);
+    }
   };
 
   return (
@@ -67,17 +129,22 @@ function App() {
         <h1 className="text-5xl">Welcome to Quote Generator</h1>
       </div>
       <div className="flex h-3/5 justify-center items-center mx-auto">
-        {quoteItems.map((quote) => {
-          return (
-            <span key={quote.id} className="text-2xl italic">
-              {quote.content}
-            </span>
-          );
-        })}
+        {quoteItems.length > 0 ? (
+          <span key={currentQuote.id} className="text-2xl italic">
+            {currentQuote.content}
+          </span>
+        ) : (
+          <span className="text-5xl italic">
+            Click below button to see an inspiring quote for today!
+          </span>
+        )}
       </div>
       <div className="flex h-1/5 justify-center mx-auto">
         <div>
-          <button className="text-4xl rounded-full py-1 px-3 border-2 border-black">
+          <button
+            className="text-4xl rounded-full py-1 px-3 border-2 border-black bg-indigo-200"
+            onClick={handleOnclick}
+          >
             Generate Quote
           </button>
         </div>
