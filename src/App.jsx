@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Configuration, OpenAIApi } from "openai";
+import Loader from "./components/Loader";
 import "./App.css";
 
 function App() {
   const [response, setResponse] = useState();
   const [quoteItems, setQuoteItems] = useState([]);
   const [currentQuote, setCurrentQuote] = useState({});
+  const [isLoading, setLoading] = useState(false);
 
   const configureOpenAI = () => {
     const configuration = new Configuration({
@@ -47,6 +49,8 @@ function App() {
    * @returns an array of objects
    */
   const makeRequest = async () => {
+    setLoading(true);
+
     // Construct the option that will be used to send a request
     const completedOptions = constructOptions();
 
@@ -78,6 +82,7 @@ function App() {
       quoteItems.push(quote);
     });
 
+    setLoading(false);
     setResponse(responseContent);
     setQuoteItems(quoteItems);
     return quoteItems;
@@ -138,6 +143,8 @@ function App() {
           <span key={currentQuote.id} className="text-2xl italic">
             {currentQuote.content}
           </span>
+        ) : isLoading ? (
+          <Loader />
         ) : (
           <span className="text-5xl italic">
             Click below button to see an inspiring quote for today!
