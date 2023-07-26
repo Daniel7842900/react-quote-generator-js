@@ -7,11 +7,15 @@ function App() {
   const [quoteItems, setQuoteItems] = useState([]);
   const [currentQuote, setCurrentQuote] = useState({});
 
-  const configuration = new Configuration({
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  });
+  const configureOpenAI = () => {
+    const configuration = new Configuration({
+      apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+    });
 
-  const openai = new OpenAIApi(configuration);
+    const openai = new OpenAIApi(configuration);
+
+    return openai;
+  };
 
   /**
    * Constructs an option that will be used to send a request.
@@ -47,6 +51,7 @@ function App() {
     const completedOptions = constructOptions();
 
     // Make a call with given option
+    const openai = configureOpenAI();
     const chat_completion = await openai.createChatCompletion(completedOptions);
 
     // Store the response (only the content)
@@ -90,13 +95,13 @@ function App() {
         setQuoteItems([]);
 
         const fetchedData = await makeRequest();
-        await findQuoteToRender(fetchedData);
+        await findNextQuote(fetchedData);
       } else {
-        await findQuoteToRender(quoteItems);
+        await findNextQuote(quoteItems);
       }
     } else {
       const fetchedData = await makeRequest();
-      await findQuoteToRender(fetchedData);
+      await findNextQuote(fetchedData);
     }
   };
 
@@ -107,7 +112,7 @@ function App() {
    *
    * @param {*} quoteItems
    */
-  const findQuoteToRender = async (quoteItems) => {
+  const findNextQuote = async (quoteItems) => {
     // Find the quote hasn't displayed yet
     const itemToDisplay = quoteItems.find((item) => item.displayed === false);
 
