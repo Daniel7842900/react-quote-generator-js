@@ -28,6 +28,7 @@ function App() {
       model: "gpt-3.5-turbo",
       frequency_penalty: 0.0,
       presence_penalty: 0.0,
+      temperature: 1.8,
       max_tokens: 500,
     };
 
