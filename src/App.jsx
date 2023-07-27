@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Configuration, OpenAIApi } from "openai";
+import Apiclient from "./services/ApiClient";
 import Loader from "./components/Loader";
 import "./App.css";
 
@@ -9,41 +9,6 @@ function App() {
   const [currentQuote, setCurrentQuote] = useState({});
   const [isLoading, setLoading] = useState(false);
 
-  const configureOpenAI = () => {
-    const configuration = new Configuration({
-      apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-    });
-
-    const openai = new OpenAIApi(configuration);
-
-    return openai;
-  };
-
-  /**
-   * Constructs an option that will be used to send a request.
-   * @returns an object
-   */
-  const constructOptions = () => {
-    const options = {
-      model: "gpt-3.5-turbo",
-      frequency_penalty: 0.0,
-      presence_penalty: 0.0,
-      temperature: 1.8,
-      max_tokens: 500,
-    };
-
-    const PROMPT = "Give me 10 inspiring quotes.";
-
-    const messages = [{ role: "user", content: PROMPT }];
-
-    const completedOptions = {
-      ...options,
-      messages: messages,
-    };
-
-    return completedOptions;
-  };
-
   /**
    * Send a request to OpenAI API and fetch the data with the given prompt.
    *
@@ -52,11 +17,14 @@ function App() {
   const makeRequest = async () => {
     setLoading(true);
 
+    const PROMPT = "Give me 10 inspiring quotes only.";
+
     // Construct the option that will be used to send a request
-    const completedOptions = constructOptions();
+    const completedOptions = Apiclient.constructOptions(PROMPT);
 
     // Make a call with given option
-    const openai = configureOpenAI();
+    const openai = Apiclient.configureOpenAI();
+
     const chat_completion = await openai.createChatCompletion(completedOptions);
 
     // Store the response (only the content)
