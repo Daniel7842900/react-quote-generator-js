@@ -1,32 +1,16 @@
 import useData from "./hooks/useData";
 import Loader from "./components/Loader";
+import Quote from "./components/Quote";
 import "./App.css";
 
 function App() {
-  const { makeRequest, findNextQuote, quoteItems, currentQuote, isLoading } =
-    useData();
+  const { generateQuote, data, currentIndex, isLoading } = useData();
 
   /**
    * Handles Generate Quote button click.
    */
-  // TODO: deal with when the last item has reached.
   const handleOnclick = async () => {
-    // Check if quoteItems is empty or not
-    if (quoteItems.length > 0) {
-      // Check if the last quote is already displayed.
-      // If so, fetch another quotes and display the first one.
-      if (quoteItems[quoteItems.length - 1]["displayed"] === true) {
-        // setQuoteItems([]);
-
-        const fetchedData = await makeRequest();
-        await findNextQuote(fetchedData);
-      } else {
-        await findNextQuote(quoteItems);
-      }
-    } else {
-      const fetchedData = await makeRequest();
-      await findNextQuote(fetchedData);
-    }
+    await generateQuote();
   };
 
   return (
@@ -35,10 +19,8 @@ function App() {
         <h1 className="text-5xl">Welcome to Quote Generator</h1>
       </div>
       <div className="flex h-3/5 justify-center items-center mx-auto">
-        {quoteItems.length > 0 ? (
-          <span key={currentQuote.id} className="text-2xl italic">
-            {currentQuote.content}
-          </span>
+        {data.length > 0 ? (
+          <Quote currentQuote={data[currentIndex]} />
         ) : isLoading ? (
           <Loader />
         ) : (

@@ -1,11 +1,30 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Apiclient from "../services/ApiClient";
 
 const useData = () => {
   const [response, setResponse] = useState();
-  const [quoteItems, setQuoteItems] = useState([]);
-  const [currentQuote, setCurrentQuote] = useState({});
+  const [data, setData] = useState([]);
   const [isLoading, setLoading] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(-1);
+
+  const generateQuote = async () => {
+    // Check if data is empty or not
+    if (data.length > 0) {
+      // Check if the last quote is already displayed.
+      // If so, fetch another quotes and display the first one.
+      if (currentIndex === data.length - 1) {
+        setData([]);
+
+        await makeRequest();
+        await findNextQuote();
+      } else {
+        await findNextQuote();
+      }
+    } else {
+      await makeRequest();
+      await findNextQuote();
+    }
+  };
 
   /**
    * Send a request to OpenAI API and fetch the data with the given prompt.
@@ -15,7 +34,8 @@ const useData = () => {
   const makeRequest = async () => {
     setLoading(true);
 
-    const PROMPT = "Give me 10 inspiring quotes only.";
+    const PROMPT =
+      "Give me 10 inspiring quotes from https://www.brainyquote.com/ in English. Start the response with the numbered point right away.";
 
     // Construct the option that will be used to send a request
     const completedOptions = Apiclient.constructOptions(PROMPT);
@@ -27,7 +47,8 @@ const useData = () => {
 
     // Store the response (only the content)
     const responseContent = chat_completion.data.choices[0].message.content;
-    const quotes = responseContent.split("\n");
+    console.log(responseContent);
+    const quotes = responseContent.split(/\n/);
     const quoteItems = [];
 
     quotes.forEach((q) => {
@@ -51,33 +72,25 @@ const useData = () => {
 
     setLoading(false);
     setResponse(responseContent);
-    setQuoteItems(quoteItems);
-    return quoteItems;
+    setData(quoteItems);
+    setCurrentIndex(0); // Start with the first quote
   };
 
   /**
    * Find the next quote to render
-   * Find the quote that has displayed property false.
-   * If the quote is found, update the states accordingly.
-   *
-   * @param {*} quoteItems
    */
-  const findNextQuote = async (quoteItems) => {
-    // Find the quote hasn't displayed yet
-    const itemToDisplay = quoteItems.find((item) => item.displayed === false);
-
-    // If found, set the states accordingly
-    if (itemToDisplay !== undefined) {
-      const updatedItem = { ...itemToDisplay, displayed: true };
-      const updatedQuoteItems = quoteItems.map((item) =>
-        item.id === itemToDisplay.id ? updatedItem : item
-      );
-
-      setCurrentQuote(updatedItem);
-      setQuoteItems(updatedQuoteItems);
+  const findNextQuote = async () => {
+    if (currentIndex < data.length - 1) {
+      setCurrentIndex(currentIndex + 1);
     }
   };
-  return { makeRequest, findNextQuote, quoteItems, currentQuote, isLoading };
+
+  return {
+    generateQuote,
+    data,
+    currentIndex,
+    isLoading,
+  };
 };
 
 export default useData;
