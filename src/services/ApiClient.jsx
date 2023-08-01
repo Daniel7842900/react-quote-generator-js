@@ -13,8 +13,6 @@ const configureOpenAI = () => {
 /**
  * Constructs an option that will be used to send a request.
  * @returns an object
- * TODO change the token limit to cover all 10 quotes
- *
  */
 const constructOptions = (prompt) => {
   const options = {
